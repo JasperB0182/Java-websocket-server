@@ -1,0 +1,15 @@
+﻿spring.application.name=Java-springboot-backend
+
+spring.datasource.url=jdbc:postgresql://(url):(port)/(database)
+spring.datasource.username=?
+spring.datasource.password=?
+
+# The SQL dialect makes Hibernate generate better SQL for the chosen database
+spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.PostgreSQLDialect
+
+# Hibernate ddl auto (create, create-drop, validate, update)
+spring.jpa.hibernate.ddl-auto=create-drop
+
+spring.web.error.include-message=always
+server.port=8080
+server.servlet.context-path=/api
