@@ -1,7 +1,5 @@
 package org.renzojasper.javawebsocketserver.dao;
 
-import org.renzojasper.javawebsocketserver.dto.CreateUserDataDTO;
-import org.renzojasper.javawebsocketserver.dto.RegisterUserDTO;
 import org.renzojasper.javawebsocketserver.models.UserData;
 import org.renzojasper.javawebsocketserver.repositories.UserDataRepository;
 import org.springframework.stereotype.Component;

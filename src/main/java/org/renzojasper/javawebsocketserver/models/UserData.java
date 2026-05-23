@@ -1,9 +1,9 @@
 package org.renzojasper.javawebsocketserver.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import org.apache.catalina.User;
-
-import java.time.LocalDateTime;
+import org.renzojasper.javawebsocketserver.models.Role.Role;
 
 @Entity
 @Table(name = "user_data")
@@ -22,15 +22,20 @@ public class UserData {
     private String password;
 
     @OneToOne
-    private UserDetails userDetails;
+    private UserInfo userInfo;
+
+    @ManyToOne()
+    @JsonManagedReference
+    private Role role;
 
     public UserData() {}
 
-    public UserData(String username, String email, String password, UserDetails userDetails) {
+    public UserData(String username, String email, String password, UserInfo userInfo, Role role) {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.userDetails = userDetails;
+        this.userInfo = userInfo;
+        this.role = role;
     }
 
     public long getId() {
@@ -63,5 +68,21 @@ public class UserData {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public UserInfo getUserInfo() {
+        return userInfo;
+    }
+
+    public void setUserInfo(UserInfo userInfo) {
+        this.userInfo = userInfo;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
