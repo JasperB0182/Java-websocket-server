@@ -1,5 +1,6 @@
 package org.renzojasper.javawebsocketserver.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.io.Serial;
@@ -22,6 +23,7 @@ public class UserInfo implements Serializable {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToOne
+    @JsonBackReference
     private UserData userData;
 
     @OneToMany(mappedBy = "sender")

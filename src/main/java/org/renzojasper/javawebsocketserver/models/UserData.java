@@ -32,6 +32,7 @@ public class UserData implements UserDetails, Serializable {
     private String password;
 
     @OneToOne
+    @JsonManagedReference
     private UserInfo userInfo;
 
     @ManyToOne()

@@ -1,5 +1,6 @@
 package org.renzojasper.javawebsocketserver.dao;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.renzojasper.javawebsocketserver.models.UserData;
 import org.renzojasper.javawebsocketserver.repositories.UserDataRepository;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,11 @@ public class UserDataDAO {
 
     public UserData getUserDataByEmail(String email) {
         return userDataRepository.findByEmail(email);
+    }
+
+    public UserData getUserDataById(long id) {
+        return userDataRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
     }
 
     public UserData getUserDataByUsername(String username) {
