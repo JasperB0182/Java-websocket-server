@@ -4,10 +4,15 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import org.renzojasper.javawebsocketserver.models.UserData;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
-public class Role {
+public class Role implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue
     private long id;

@@ -1,19 +1,28 @@
 package org.renzojasper.javawebsocketserver.services;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.renzojasper.javawebsocketserver.dao.UserDataDAO;
 import org.renzojasper.javawebsocketserver.dto.LoginUserRequestDTO;
 import org.renzojasper.javawebsocketserver.dto.LoginUserResponseDTO;
 import org.renzojasper.javawebsocketserver.dto.RegisterUserRequestDTO;
+import org.renzojasper.javawebsocketserver.dto.SessionDTO;
 import org.renzojasper.javawebsocketserver.models.Role.Role;
 import org.renzojasper.javawebsocketserver.models.UserData;
 import org.renzojasper.javawebsocketserver.models.UserInfo;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,28 +45,31 @@ public class UserDataService implements UserDetailsService {
         this.roleService = roleService;
     }
 
+    @Value("${server.servlet.session.cookie.name}")
+    private String cookieName;
+
     public UserDetails loadUserByUsername(String username) {
         UserData userData = userDataDAO.getUserDataByUsername(username);
 
         return new User(userData.getUsername(), userData.getPassword(), Collections.singletonList(new SimpleGrantedAuthority(userData.getRole().getName().toString())));
     }
 
-    public ResponseEntity<LoginUserResponseDTO> registerUserData(RegisterUserRequestDTO registerUserRequestDTO) {
+    public ResponseEntity<LoginUserResponseDTO> registerUserData(RegisterUserRequestDTO registerUserRequestDTO, HttpServletRequest request) {
         validateEmail(registerUserRequestDTO.email);
         validateUsername(registerUserRequestDTO.username);
         validateUniqueEmail(registerUserRequestDTO.email);
         validateUniqueUsername(registerUserRequestDTO.username);
         validatePassword(registerUserRequestDTO.password);
 
-        createUserData(registerUserRequestDTO);
+        UserData userData = createUserData(registerUserRequestDTO);
 
-        // generate token
+        createSession(userData, request);
 
-        LoginUserResponseDTO loginResponse = new LoginUserResponseDTO(registerUserRequestDTO.username); // add token in loginResponseDTO
+        LoginUserResponseDTO loginResponse = new LoginUserResponseDTO(registerUserRequestDTO.username);
         return ResponseEntity.ok(loginResponse);
     }
 
-    public ResponseEntity<LoginUserResponseDTO> loginUserData(LoginUserRequestDTO loginUserRequestDTO) {
+    public ResponseEntity<LoginUserResponseDTO> loginUserData(LoginUserRequestDTO loginUserRequestDTO, HttpServletRequest request) {
         try {
             UserData userData = findUserDataByEmailOrUsername(loginUserRequestDTO.emailOrUsername);
 
@@ -65,15 +77,50 @@ public class UserDataService implements UserDetailsService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No valid credentials");
             }
 
-            // generate token
+            createSession(userData, request);
 
-            LoginUserResponseDTO loginResponse = new LoginUserResponseDTO(userData.getUsername()); // add token in loginResponseDTO
+            LoginUserResponseDTO loginResponse = new LoginUserResponseDTO(userData.getUsername());
             return ResponseEntity.ok(loginResponse);
         } catch (AuthenticationException authExc) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "No valid credentials"
             );
         }
+    }
+
+    public ResponseEntity<Void> logoutUserData(HttpServletRequest request, HttpServletResponse response) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        SecurityContextHolder.clearContext();
+
+        Cookie cookie = new Cookie(cookieName, null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+
+        return ResponseEntity.noContent().build(); // 204
+    }
+
+    private void createSession(UserData userData, HttpServletRequest request) {
+        SessionDTO sessionDTO = new SessionDTO(userData.getId(), userData.getUsername());
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                sessionDTO,
+                null,
+                userData.getAuthorities()
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        HttpSession session = request.getSession(true);
+        session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                SecurityContextHolder.getContext()
+        );
     }
 
     public UserData findUserDataByEmailOrUsername(String emailOrUsername) {
@@ -84,7 +131,7 @@ public class UserDataService implements UserDetailsService {
         return userDataDAO.getUserDataByUsername(emailOrUsername);
     }
 
-    private void createUserData(RegisterUserRequestDTO registerUserRequestDTO) {
+    private UserData createUserData(RegisterUserRequestDTO registerUserRequestDTO) {
         UserInfo userInfo = userInfoService.CreateUserInfo();
         String hashedPassword = passwordEncoder.encode(registerUserRequestDTO.password);
         Role userRole = roleService.getRoleByName("ROLE_USER");
@@ -92,6 +139,8 @@ public class UserDataService implements UserDetailsService {
         UserData userData = new UserData(registerUserRequestDTO.username, registerUserRequestDTO.email.toLowerCase(), hashedPassword, userInfo, userRole);
         userDataDAO.saveUserData(userData);
         userInfoService.setUserDataForUserInfo(userInfo, userData);
+
+        return userData;
     }
 
     private void validateEmail(String email) {

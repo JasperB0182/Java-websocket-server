@@ -1,5 +1,7 @@
 package org.renzojasper.javawebsocketserver.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.renzojasper.javawebsocketserver.dto.LoginUserRequestDTO;
 import org.renzojasper.javawebsocketserver.dto.LoginUserResponseDTO;
 import org.renzojasper.javawebsocketserver.dto.RegisterUserRequestDTO;
@@ -20,12 +22,17 @@ public class UserDataController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<LoginUserResponseDTO> registerAccount(@RequestBody RegisterUserRequestDTO registerUserRequestDTO) {
-        return this.userDataService.registerUserData(registerUserRequestDTO);
+    public ResponseEntity<LoginUserResponseDTO> registerAccount(@RequestBody RegisterUserRequestDTO registerUserRequestDTO, HttpServletRequest request) {
+        return this.userDataService.registerUserData(registerUserRequestDTO, request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginUserResponseDTO> login(@RequestBody LoginUserRequestDTO loginUserRequestDTO) {
-        return this.userDataService.loginUserData(loginUserRequestDTO);
+    public ResponseEntity<LoginUserResponseDTO> login(@RequestBody LoginUserRequestDTO loginUserRequestDTO, HttpServletRequest request) {
+        return this.userDataService.loginUserData(loginUserRequestDTO, request);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        return userDataService.logoutUserData(request, response);
     }
 }
