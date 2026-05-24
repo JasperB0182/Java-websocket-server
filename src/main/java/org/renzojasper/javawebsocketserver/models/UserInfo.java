@@ -3,6 +3,7 @@ package org.renzojasper.javawebsocketserver.models;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "user_info")
@@ -18,6 +19,9 @@ public class UserInfo {
 
     @OneToOne
     private UserData userData;
+
+    @OneToMany(mappedBy = "sender")
+    private List<Message> message;
 
     public UserInfo(String nickname) {
         this.nickname = nickname;
@@ -56,5 +60,13 @@ public class UserInfo {
 
     public void setUserData(UserData userData) {
         this.userData = userData;
+    }
+
+    public List<Message> getMessage() {
+        return message;
+    }
+
+    public void setMessage(List<Message> message) {
+        this.message = message;
     }
 }
