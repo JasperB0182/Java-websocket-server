@@ -30,7 +30,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
         }
 
         super.afterConnectionEstablished(session);
-        System.out.println(sessionDTO.getId() + " has connected");
+        System.out.println(sessionDTO.getUsername() + " has connected");
         webSocketSessions.add(session);
     }
 
@@ -41,7 +41,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         super.afterConnectionClosed(session, status);
 
-        System.out.println(sessionDTO.getId() + " has disconnected.");
+        System.out.println(sessionDTO.getUsername() + " has disconnected.");
 
         webSocketSessions.remove(session);
     }
@@ -51,7 +51,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
         SessionDTO sessionDTO = getSessionDTO(session);
 
         super.handleMessage(session, message);
-        System.out.println(sessionDTO.getId() + " says: " + message.getPayload());
+        System.out.println("[" + sessionDTO.getUsername() + "]:" + message.getPayload());
 
         for (WebSocketSession webSocketSession : webSocketSessions) {
             if (session == webSocketSession) {
