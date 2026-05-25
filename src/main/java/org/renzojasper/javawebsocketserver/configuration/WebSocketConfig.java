@@ -10,12 +10,19 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+
+    private final SocketConnectionHandler socketConnectionHandler;
+
+    public WebSocketConfig(SocketConnectionHandler socketConnectionHandler) {
+        this.socketConnectionHandler = socketConnectionHandler;
+    }
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         // The url for the websocket is ws://localhost:8080/api/chat
         // We have to be carefull with the origins, we don't want all websites to be able to do this, so to speak.
         registry
-                .addHandler(new SocketConnectionHandler(), "/chat")
+                .addHandler(socketConnectionHandler, "/chat")
                 .addInterceptors(new HttpSessionHandshakeInterceptor())
                 .setAllowedOrigins("*");
     }

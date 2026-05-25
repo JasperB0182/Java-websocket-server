@@ -1,0 +1,9 @@
+package org.renzojasper.javawebsocketserver.repositories;
+
+import org.renzojasper.javawebsocketserver.models.Message;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface MessageRepository extends JpaRepository<Message, Long> {
+}

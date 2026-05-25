@@ -2,21 +2,29 @@ package org.renzojasper.javawebsocketserver.handlers;
 
 import org.jspecify.annotations.NonNull;
 import org.renzojasper.javawebsocketserver.dto.SessionDTO;
+import org.renzojasper.javawebsocketserver.services.MessageService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Component
 public class SocketConnectionHandler extends TextWebSocketHandler {
     // Here are all the current connections saved
     List<WebSocketSession> webSocketSessions = Collections.synchronizedList(new ArrayList<>());
+
+    private final MessageService messageService;
+
+    public SocketConnectionHandler(MessageService messageService) {
+        this.messageService = messageService;
+    }
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
@@ -51,7 +59,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
         SessionDTO sessionDTO = getSessionDTO(session);
 
         super.handleMessage(session, message);
-        System.out.println("[" + sessionDTO.getUsername() + "]:" + message.getPayload());
+        System.out.println("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
 
         for (WebSocketSession webSocketSession : webSocketSessions) {
             if (session == webSocketSession) {
@@ -59,6 +67,9 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
             }
             webSocketSession.sendMessage(message);
         }
+
+        messageService.saveMessage(sessionDTO, (String) message.getPayload());
+
     }
 
     private SessionDTO getSessionDTO(WebSocketSession session) {
