@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -39,6 +40,14 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         super.afterConnectionEstablished(session);
         System.out.println(sessionDTO.getUsername() + " has connected");
+        WebSocketMessage<String> formattedMessage = new TextMessage(sessionDTO.getUsername() + " has connected.");
+
+        for (WebSocketSession webSocketSession : webSocketSessions) {
+            if (session == webSocketSession) {
+                continue;
+            }
+            webSocketSession.sendMessage(formattedMessage);
+        }
         webSocketSessions.add(session);
     }
 
@@ -51,6 +60,15 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         System.out.println(sessionDTO.getUsername() + " has disconnected.");
 
+        WebSocketMessage<String> formattedMessage = new TextMessage(sessionDTO.getUsername() + " has disconnected.");
+
+        for (WebSocketSession webSocketSession : webSocketSessions) {
+            if (session == webSocketSession) {
+                continue;
+            }
+            webSocketSession.sendMessage(formattedMessage);
+        }
+
         webSocketSessions.remove(session);
     }
 
@@ -58,6 +76,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
     public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message) throws Exception {
         SessionDTO sessionDTO = getSessionDTO(session);
 
+        WebSocketMessage<String> formattedMessage = new TextMessage("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
         super.handleMessage(session, message);
         System.out.println("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
 
@@ -65,7 +84,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
             if (session == webSocketSession) {
                 continue;
             }
-            webSocketSession.sendMessage(message);
+            webSocketSession.sendMessage(formattedMessage);
         }
 
         messageService.saveMessage(sessionDTO, (String) message.getPayload());
