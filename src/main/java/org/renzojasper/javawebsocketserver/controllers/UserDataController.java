@@ -7,10 +7,7 @@ import org.renzojasper.javawebsocketserver.dto.LoginUserResponseDTO;
 import org.renzojasper.javawebsocketserver.dto.RegisterUserRequestDTO;
 import org.renzojasper.javawebsocketserver.services.UserDataService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,5 +31,10 @@ public class UserDataController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         return userDataService.logoutUserData(request, response);
+    }
+
+    @GetMapping("/username")
+    public ResponseEntity<Void> userNameAvailable(@RequestParam String username) {
+        return userDataService.userNameAvailable(username);
     }
 }
