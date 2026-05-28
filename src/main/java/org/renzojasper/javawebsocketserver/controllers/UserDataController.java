@@ -32,9 +32,4 @@ public class UserDataController {
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         return userDataService.logoutUserData(request, response);
     }
-
-    @GetMapping("/username")
-    public ResponseEntity<Void> userNameAvailable(@RequestParam String username) {
-        return userDataService.userNameAvailable(username);
-    }
 }

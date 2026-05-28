@@ -105,14 +105,6 @@ public class UserDataService implements UserDetailsService {
         return ResponseEntity.noContent().build(); // 204
     }
 
-    public ResponseEntity<Void> userNameAvailable(String username) {
-        UserData userData = userDataDAO.getUserDataByUsername(username);
-        if (userData == null) {
-            return ResponseEntity.ok().build();
-        }
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
-    }
-
     private void createSession(UserData userData, HttpServletRequest request) {
         SessionDTO sessionDTO = new SessionDTO(userData.getId(), userData.getUsername());
 
