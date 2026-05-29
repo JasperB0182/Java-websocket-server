@@ -1,6 +1,10 @@
 package org.renzojasper.javawebsocketserver.handlers;
 
 import org.jspecify.annotations.NonNull;
+import org.renzojasper.javawebsocketserver.dto.SessionDTO;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -11,32 +15,43 @@ import java.util.Collections;
 import java.util.List;
 
 public class SocketConnectionHandler extends TextWebSocketHandler {
-    // Hier worden alle huidige connecties opgeslagen
+    // Here are all the current connections saved
     List<WebSocketSession> webSocketSessions = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
-        // Dit voert de afterConnectionEstablished functie uit van TextWebSocketHandler nadat er een connectie heeft plaatsgevonden
+        // This executes the afterConnectionEstablished function of TextWebSocketHandler after a connection has been established
+        SessionDTO sessionDTO = getSessionDTO(session);
+
+        if (sessionDTO == null) {
+            session.close(CloseStatus.NOT_ACCEPTABLE);
+            System.out.println("Unauthenticated connection attempt rejected.");
+            return;
+        }
+
         super.afterConnectionEstablished(session);
-
-        System.out.println(session.getId() + " has connected");
-
+        System.out.println(sessionDTO.getUsername() + " has connected");
         webSocketSessions.add(session);
     }
 
     @Override
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) throws Exception {
-        // Voert dus nu de functie uit van TextWebSocketHandler nadat de connectie is afgesloten
+        // So now it executes the TextWebSocketHandler function after the connection has been closed
+        SessionDTO sessionDTO = getSessionDTO(session);
+
         super.afterConnectionClosed(session, status);
 
-        System.out.println(session.getId() + " has disconnected.");
+        System.out.println(sessionDTO.getUsername() + " has disconnected.");
 
         webSocketSessions.remove(session);
     }
 
     @Override
     public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message) throws Exception {
+        SessionDTO sessionDTO = getSessionDTO(session);
+
         super.handleMessage(session, message);
+        System.out.println("[" + sessionDTO.getUsername() + "]:" + message.getPayload());
 
         for (WebSocketSession webSocketSession : webSocketSessions) {
             if (session == webSocketSession) {
@@ -46,5 +61,17 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
         }
     }
 
+    private SessionDTO getSessionDTO(WebSocketSession session) {
+        SecurityContext securityContext = (SecurityContext) session
+                .getAttributes()
+                .get(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
 
+        if (securityContext == null || securityContext.getAuthentication() == null
+                || !securityContext.getAuthentication().isAuthenticated()
+                || securityContext.getAuthentication() instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+
+        return (SessionDTO) securityContext.getAuthentication().getPrincipal();
+    }
 }
