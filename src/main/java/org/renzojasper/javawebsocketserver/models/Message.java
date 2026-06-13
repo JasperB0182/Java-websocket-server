@@ -1,9 +1,6 @@
 package org.renzojasper.javawebsocketserver.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +8,10 @@ import java.time.LocalDateTime;
 public class Message {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long messageID;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne

@@ -2,21 +2,34 @@ package org.renzojasper.javawebsocketserver.handlers;
 
 import org.jspecify.annotations.NonNull;
 import org.renzojasper.javawebsocketserver.dto.SessionDTO;
+import org.renzojasper.javawebsocketserver.services.MessageService;
+import org.renzojasper.javawebsocketserver.services.SocketService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@Component
 public class SocketConnectionHandler extends TextWebSocketHandler {
     // Here are all the current connections saved
     List<WebSocketSession> webSocketSessions = Collections.synchronizedList(new ArrayList<>());
+
+    private final MessageService messageService;
+
+    private final SocketService socketService;
+
+    public SocketConnectionHandler(MessageService messageService, SocketService socketService) {
+        this.messageService = messageService;
+        this.socketService = socketService;
+    }
 
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
@@ -31,6 +44,17 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         super.afterConnectionEstablished(session);
         System.out.println(sessionDTO.getUsername() + " has connected");
+        WebSocketMessage<String> formattedMessage = new TextMessage(sessionDTO.getUsername() + " has connected.");
+
+        for (WebSocketSession webSocketSession : webSocketSessions) {
+            if (session == webSocketSession) {
+                continue;
+            }
+            webSocketSession.sendMessage(formattedMessage);
+        }
+
+        socketService.setupChatHistory(session);
+
         webSocketSessions.add(session);
     }
 
@@ -41,7 +65,17 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         super.afterConnectionClosed(session, status);
 
+        assert sessionDTO != null;
         System.out.println(sessionDTO.getUsername() + " has disconnected.");
+
+        WebSocketMessage<String> formattedMessage = new TextMessage(sessionDTO.getUsername() + " has disconnected.");
+
+        for (WebSocketSession webSocketSession : webSocketSessions) {
+            if (session == webSocketSession) {
+                continue;
+            }
+            webSocketSession.sendMessage(formattedMessage);
+        }
 
         webSocketSessions.remove(session);
     }
@@ -50,15 +84,20 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
     public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message) throws Exception {
         SessionDTO sessionDTO = getSessionDTO(session);
 
+        assert sessionDTO != null;
+        WebSocketMessage<String> formattedMessage = new TextMessage("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
         super.handleMessage(session, message);
-        System.out.println("[" + sessionDTO.getUsername() + "]:" + message.getPayload());
+        System.out.println("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
 
         for (WebSocketSession webSocketSession : webSocketSessions) {
             if (session == webSocketSession) {
                 continue;
             }
-            webSocketSession.sendMessage(message);
+            webSocketSession.sendMessage(formattedMessage);
         }
+
+        messageService.saveMessage(sessionDTO, (String) message.getPayload());
+
     }
 
     private SessionDTO getSessionDTO(WebSocketSession session) {
