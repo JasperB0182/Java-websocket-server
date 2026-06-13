@@ -3,6 +3,7 @@ package org.renzojasper.javawebsocketserver.handlers;
 import org.jspecify.annotations.NonNull;
 import org.renzojasper.javawebsocketserver.dto.SessionDTO;
 import org.renzojasper.javawebsocketserver.services.MessageService;
+import org.renzojasper.javawebsocketserver.services.SocketService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -23,8 +24,11 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
     private final MessageService messageService;
 
-    public SocketConnectionHandler(MessageService messageService) {
+    private final SocketService socketService;
+
+    public SocketConnectionHandler(MessageService messageService, SocketService socketService) {
         this.messageService = messageService;
+        this.socketService = socketService;
     }
 
     @Override
@@ -48,6 +52,9 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
             }
             webSocketSession.sendMessage(formattedMessage);
         }
+
+        socketService.setupChatHistory(session);
+
         webSocketSessions.add(session);
     }
 
@@ -58,6 +65,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
 
         super.afterConnectionClosed(session, status);
 
+        assert sessionDTO != null;
         System.out.println(sessionDTO.getUsername() + " has disconnected.");
 
         WebSocketMessage<String> formattedMessage = new TextMessage(sessionDTO.getUsername() + " has disconnected.");
@@ -76,6 +84,7 @@ public class SocketConnectionHandler extends TextWebSocketHandler {
     public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message) throws Exception {
         SessionDTO sessionDTO = getSessionDTO(session);
 
+        assert sessionDTO != null;
         WebSocketMessage<String> formattedMessage = new TextMessage("[" + sessionDTO.getUsername() + "]: " + message.getPayload());
         super.handleMessage(session, message);
         System.out.println("[" + sessionDTO.getUsername() + "]: " + message.getPayload());

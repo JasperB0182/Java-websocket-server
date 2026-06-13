@@ -7,6 +7,7 @@ import org.renzojasper.javawebsocketserver.repositories.MessageRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class MessageService {
@@ -27,5 +28,9 @@ public class MessageService {
 
         this.messageRepository.save(newMessage);
 
+    }
+
+    public List<Message> retrieveLast50Messages() {
+        return this.messageRepository.findTop50ByOrderByMessageIDAsc();
     }
 }
