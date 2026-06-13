@@ -1,4 +1,4 @@
-﻿package org.renzojasper.javawebsocketserver.services;
+package org.renzojasper.javawebsocketserver.services;
 
 import org.renzojasper.javawebsocketserver.models.Message;
 import org.springframework.stereotype.Service;
