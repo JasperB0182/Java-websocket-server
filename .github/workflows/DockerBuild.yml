@@ -55,5 +55,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /opt/real-time-chat/backend/
+            docker compose down
             docker compose pull
             docker compose up -d
